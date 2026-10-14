@@ -1,0 +1,41 @@
+BEGIN:VCALENDAR
+PRODID:-//Airbnb Inc//Hosting Calendar 0.8.8//EN
+CALSCALE:GREGORIAN
+VERSION:2.0
+BEGIN:VEVENT
+DTSTAMP:20261001T120000Z
+DTSTART;VALUE=DATE:20261025
+DTEND;VALUE=DATE:20261028
+SUMMARY:Reserved
+UID:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d@airbnb.com
+DESCRIPTION:Reservation URL: https://www.airbnb.com/hosting/reservations/de
+ tails/HMABCDEFGH\nPhone Number (Last 4 Digits): 4321
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261001T120000Z
+DTSTART;VALUE=DATE:20261101
+DTEND;VALUE=DATE:20261103
+SUMMARY:Airbnb (Not available)
+UID:bloqueo-airbnb-0001@airbnb.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261001T120000Z
+DTSTART;VALUE=DATE:20261110
+DTEND;VALUE=DATE:20261112
+SUMMARY;LANGUAGE=es:Reserved - Familia Pérez\, López
+UID:largo-01234567890123456789012345678901234567890123456789012345678901
+ 23456789012345678901234567890123456789012345678901234567890123456789012345
+ 67890123456789012345678901234567890123456789@airbnb.com
+DESCRIPTION:Reservation URL: https://www.airbnb.com/hosting/reservations/de
+ tails/HMLARGOLARGO\nPhone Number (Last 4 Digits): 9876\nLlegan en bus desd
+ e Calama\, piden cama extra para el niño\, desayuno sin gluten y una bici
+  para recorrer el pueblo. Traen dos maletas grandes\, una guitarra y un t
+ elescopio pequeño para ver las estrellas desde la terraza del hostal. Avi
+ sar al turno de noche que llegan pasadas las 23:00 horas por el vuelo.
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Recordatorio que NO debe pisar la descripción del evento
+END:VALARM
+END:VEVENT
+END:VCALENDAR

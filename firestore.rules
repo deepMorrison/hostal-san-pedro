@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// Reglas de Firestore — Recepción Atacama (Hostal San Pedro)
+//
+// Quién puede hacer qué:
+//   - Personal de recepción (correo y contraseña, y su correo está en la lista de abajo): lee y edita todo.
+//   - Pasajero (celular, sesión anónima): solo puede CREAR su pre-registro «por confirmar» y leer la
+//     información pública de la hostal (WiFi, normas, horarios). No puede leer ni cambiar ningún registro.
+//   - El sincronizador de calendarios (GitHub Actions) usa una cuenta de servicio y no pasa por estas reglas.
+//
+// >>> CAMBIA ESTA LISTA por el correo (o los correos) de las cuentas del personal. <<<
+// Así, aunque alguien se cree una cuenta nueva, no podrá ver los datos de los pasajeros.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function personal() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && request.auth.token.email in ['wenzoe.tiersen@gmail.com'];
+    }
+
+    function conSesion() {
+      return request.auth != null;
+    }
+
+    // Campo de texto opcional con largo máximo
+    function texto(d, k, n) {
+      return !(k in d) || (d[k] is string && d[k].size() <= n);
+    }
+
+    // Lo único que un pasajero puede escribir: su pre-registro, sin firma, sin precio, sin habitación confirmada
+    function preRegistroValido(d) {
+      return d.keys().hasOnly(['nombre', 'apellido', 'nacionalidad', 'fechaNacimiento', 'tipoDoc', 'numDoc',
+                               'profesion', 'procedencia', 'destino', 'fechaLlegada', 'fechaSalida', 'personas',
+                               'habitacion', 'telefono', 'email', 'notas', 'nombreCompleto', 'busca', 'idioma',
+                               'reservaId', 'estado', 'origen', 'acepta', 'creadoEn'])
+        && d.estado == 'pendiente'
+        && d.origen == 'precheckin'
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 80
+        && d.numDoc is string && d.numDoc.size() >= 4 && d.numDoc.size() <= 30
+        && texto(d, 'apellido', 80) && texto(d, 'nacionalidad', 60) && texto(d, 'fechaNacimiento', 20)
+        && texto(d, 'tipoDoc', 40) && texto(d, 'profesion', 80) && texto(d, 'procedencia', 120)
+        && texto(d, 'destino', 120) && texto(d, 'fechaLlegada', 20) && texto(d, 'fechaSalida', 20)
+        && texto(d, 'habitacion', 30) && texto(d, 'telefono', 40) && texto(d, 'email', 120)
+        && texto(d, 'notas', 1000) && texto(d, 'nombreCompleto', 170) && texto(d, 'busca', 400)
+        && texto(d, 'idioma', 5) && texto(d, 'reservaId', 100) && texto(d, 'creadoEn', 40)
+        && (!('personas' in d) || (d.personas is number && d.personas >= 1 && d.personas <= 30))
+        && (!('acepta' in d) || d.acepta is bool);
+    }
+
+    // Información pública de la hostal (la copia el personal al pulsar «Guardar información»)
+    match /config/publico {
+      allow read: if conSesion();
+      allow write: if personal();
+    }
+
+    // Configuración completa (incluye el PIN de recepción)
+    match /config/{doc} {
+      allow read, write: if personal();
+    }
+
+    // Libro de pasajeros
+    match /huespedes/{id} {
+      allow read, update, delete: if personal();
+      allow create: if personal() || (conSesion() && preRegistroValido(request.resource.data));
+    }
+
+    // Reservas (manuales, pegadas o sincronizadas desde los calendarios)
+    match /reservas/{id} {
+      allow read, write: if personal();
+    }
+  }
+}

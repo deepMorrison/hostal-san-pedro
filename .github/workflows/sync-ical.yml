@@ -1,0 +1,40 @@
+# Sincroniza cada hora los calendarios iCal (Booking.com, Airbnb, etc.) con la
+# colección `reservas` de Firestore. Ver README.md para configurar los secretos.
+name: Sincronizar reservas iCal
+
+on:
+  schedule:
+    # Cada hora, en el minuto 17 (GitHub usa hora UTC; para una tarea horaria da lo mismo).
+    - cron: '17 * * * *'
+  # Permite lanzarla a mano desde la pestaña Actions → "Run workflow".
+  workflow_dispatch:
+
+# El token del repositorio solo necesita leer el código.
+permissions:
+  contents: read
+
+# Nunca dos sincronizaciones al mismo tiempo (si una se atrasa, la siguiente espera).
+concurrency:
+  group: sincronizar-reservas
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    name: Sincronizar calendarios con Firestore
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sincronizar
+        env:
+          ICAL_SOURCES: ${{ secrets.ICAL_SOURCES }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        working-directory: sync-ical
+        run: node sync.mjs

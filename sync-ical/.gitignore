@@ -1,0 +1,9 @@
+# Nunca subir credenciales al repositorio: van en los secretos de GitHub.
+*firebase-adminsdk*.json
+cuenta-servicio*.json
+service-account*.json
+ical-sources*.json
+.env
+.env.*
+
+node_modules/
