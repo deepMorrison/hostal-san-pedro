@@ -234,6 +234,23 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .room ul{margin:0;padding:0;list-style:none;display:grid;gap:3px;font-size:.9rem}
 .room li{display:flex;justify-content:space-between;gap:8px}
 .room li span{color:var(--muted);font-size:.8rem;white-space:nowrap}
+/* tablero: asignar habitación antes de la llegada */
+.asignar{margin-bottom:14px;display:grid;gap:10px}
+.asignar h3,.asignar p{margin:0}
+.asigchips{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.asiggrp{flex-basis:100%;font-weight:700;font-size:.9rem;margin-top:2px}
+.asigchip{display:grid;gap:2px;text-align:left;min-width:190px;border:2px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit}
+.asigchip b{font-size:1rem}
+.asigchip span{font-size:.82rem;color:var(--muted)}
+.asigchip .asighab{font-size:1.05rem;font-weight:700;color:var(--ok)}
+.asigchip.falta{border-color:var(--bad)}
+.asigchip.falta .asighab{color:var(--bad)}
+.asigchip.sel{border-color:var(--accent);outline:3px solid var(--accent);outline-offset:1px}
+.room h4{font-size:1.4rem}
+.room.elegible{cursor:pointer;outline:3px solid var(--ok);outline-offset:-2px;background:var(--ok-bg)}
+.room.noeleg{opacity:.5}
+.room .roomhint{font-weight:700;font-size:.95rem;color:var(--ok)}
+.room.noeleg .roomhint{color:var(--muted);font-weight:500;font-size:.85rem}
 .gridwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
 table.occ{min-width:0;font-size:.8rem}
 table.occ th,table.occ td{padding:6px 6px;text-align:center}
@@ -414,6 +431,7 @@ table.occ td{font-variant-numeric:tabular-nums}
     <div id="preView" hidden>
       <div class="welcome">
         <h2 id="preTitle"></h2>
+        <div class="room" id="preRoom" hidden></div>
         <p class="lead" id="preLead" style="margin:8px auto 0" data-i18n="pre_done_lead">Muestra este código en recepción al llegar, o envíalo ahora por WhatsApp.</p>
       </div>
       <div class="card qrcard" style="margin-top:14px">
@@ -582,6 +600,12 @@ table.occ td{font-variant-numeric:tabular-nums}
       <!-- HABITACIONES -->
       <div id="sub-habitaciones" hidden>
         <p class="lead">Estado de cada habitación hoy y ocupación de los próximos 14 días (alojados, por confirmar y reservas). Define las habitaciones y su capacidad en Configuración.</p>
+        <div class="card asignar" id="asignar">
+          <h3>Llegadas: elige su habitación</h3>
+          <p class="muted" id="asigHint"></p>
+          <div class="asigchips" id="asigList"></div>
+          <div class="acts"><button class="btn sm ghost" type="button" id="asigQuitar" hidden>Quitar habitación</button><button class="btn sm ghost" type="button" id="asigCancel" hidden>Cancelar</button></div>
+        </div>
         <div class="rooms" id="rooms"></div>
         <div class="gridwrap"><table class="occ" id="occ"></table></div>
       </div>
@@ -1765,7 +1789,10 @@ function fillFromPending(p,forzar){
   if(p.tipoDoc&&(forzar||!$("numDoc").classList.contains("ai")))$("tipoDoc").value=p.tipoDoc;
   ["procedencia","destino","fechaLlegada","fechaSalida","personas","habitacion","telefono","email","notas"].forEach(k=>{if(p[k]!=null&&p[k]!==""){$(k).value=p[k];$(k).classList.add("ai");}});
   if(p.reservaId&&!formReservaId)formReservaId=p.reservaId;
-  const bn=$("backNote");bn.textContent=t("pend_found",{n:p.nombreCompleto||((p.nombre||"")+" "+(p.apellido||"")).trim(),a:fmt(p.fechaLlegada),b:fmt(p.fechaSalida)});bn.hidden=false;
+  /* habitación asignada antes de la llegada: si el pre-registro no la tiene, la de su reserva */
+  if(!$("habitacion").value.trim()&&p.reservaId){const r=reservas.find(x=>x.id===p.reservaId);if(r&&r.habitacion){$("habitacion").value=r.habitacion;$("habitacion").classList.add("ai");}}
+  const hab=$("habitacion").value.trim();
+  const bn=$("backNote");bn.textContent=t("pend_found",{n:p.nombreCompleto||((p.nombre||"")+" "+(p.apellido||"")).trim(),a:fmt(p.fechaLlegada),b:fmt(p.fechaSalida)})+(hab?" · "+t("room",{r:hab}):"");bn.hidden=false;
   checkMinor();updateHabPick();
 }
 async function lookupReturning(){
@@ -1920,6 +1947,9 @@ async function showPre(rec,saved){
   const code=await encodePre(rec);
   const pl=$("preLead");pl.dataset.i18n=saved?"pre_saved_lead":"pre_done_lead";pl.textContent=t(pl.dataset.i18n);
   $("preTitle").textContent=t("pre_done_title",{n:rec.nombre});
+  /* habitación que recepción ya le asignó (viene en su enlace) */
+  const hr=rec.habitacion&&prefill&&prefill.habitacion===rec.habitacion?rec.habitacion:"";
+  $("preRoom").textContent=hr?t("room",{r:hr}):"";$("preRoom").hidden=!hr;
   $("preCode").textContent=code;drawQr($("preQr"),code,"L");
   const n=waNumber(config.telefono);const wa=$("preWa");
   /* con enlace público, recepción abre el mensaje y toca el enlace: el registro llega ya cargado */
@@ -2020,11 +2050,12 @@ function roomSelect(h){
   const s=el("select");s.setAttribute("aria-label","Habitación");s.className="habsel";
   const a=h.fechaLlegada||todayISO(),b=h.fechaSalida,pers=Number(h.personas)||1;
   const excl=new Set([h.id,h.reservaId].filter(Boolean));
-  const list=rooms();if(h.habitacion&&!list.some(r=>r.nombre===h.habitacion))list.push({nombre:h.habitacion,camas:null,dorm:false});
+  const cur=habPend(h); /* la asignada en el tablero (en el registro o en su reserva) */
+  const list=rooms();if(cur&&!list.some(r=>r.nombre===cur))list.push({nombre:cur,camas:null,dorm:false});
   s.appendChild(new Option("Sin habitación",""));
   let sug="";
   list.forEach(r=>{const st=roomStatus(r,a,b,pers,excl);s.appendChild(new Option(r.nombre+" · "+st.label,r.nombre));if(!sug&&st.ok)sug=r.nombre;});
-  s.value=h.habitacion||sug;
+  s.value=cur||sug;
   return s;
 }
 async function confirmPending(h,room){
@@ -2111,15 +2142,13 @@ function resActions(r){
 async function preLinkUrl(r){
   const base=config.publicUrl||"";if(!base)return "";
   const generico=/^(reserva|bloqueo|reserved|closed|not available|airbnb|booking)/i.test((r.nombre||"").trim());
-  const code=await encodePre({nombre:generico?"":(r.nombre||""),apellido:generico?"":(r.apellido||""),nacionalidad:r.nacionalidad||"",fechaLlegada:r.llegada||"",fechaSalida:r.salida||"",personas:Number(r.personas)||1,habitacion:r.habitacion||"",telefono:r.telefono||"",email:r.email||"",reservaId:r.id});
+  const code=await encodePre({nombre:generico?"":(r.nombre||""),apellido:generico?"":(r.apellido||""),nacionalidad:r.nacionalidad||"",fechaLlegada:r.llegada||"",fechaSalida:r.salida||"",personas:Number(r.personas)||1,habitacion:habRes(r),telefono:r.telefono||"",email:r.email||"",reservaId:r.id});
   return base+"#"+code;
 }
 async function preLinkPanel(r,w){
   const url=await preLinkUrl(r);
   if(!url){toast("Primero configura el enlace público en Configuración");return;}
-  const generico=/^(reserva|bloqueo|reserved|closed|not available|airbnb|booking)/i.test((r.nombre||"").trim());
-  const n=generico?"":" "+(r.nombre||"").trim();
-  const msg="¡Hola"+n+"! Para agilizar tu llegada a "+(config.nombre||"la hostal")+" el "+fmt(r.llegada)+", completa tu pre-registro aquí (toma 2 minutos). / Hi! To speed up your check-in on "+fmt(r.llegada)+", please fill in your pre-registration here:\n"+url;
+  const msg=msgPreLlegada(r,url); /* mismo texto que en «Mensajes para hoy», con su habitación si ya la tiene */
   w.replaceChildren();
   const tel=waNumber(r.telefono);
   if(tel){const a=el("a","btn sm","WhatsApp");a.href="https://wa.me/"+tel+"?text="+encodeURIComponent(msg);a.target="_blank";a.rel="noopener";w.appendChild(a);}
@@ -2258,13 +2287,61 @@ function roomStatus(r,a,b,pers,excl){
   if(r.camas&&pers>r.camas)return {ok:false,label:"capacidad "+r.camas,detalle:"capacidad para "+r.camas+" personas"};
   return {ok:true,label:"libre",detalle:""};
 }
+/* ---- Tablero: asignar la habitación antes de que llegue el pasajero (llegadas de hoy y mañana) ---- */
+let asignando=null; /* clave del pasajero elegido en el tablero */
+const resDe=h=>h&&h.reservaId?reservas.find(r=>r.id===h.reservaId)||null:null;
+/* habitación asignada: la del registro o, si falta, la de su reserva (y al revés) */
+function habPend(h){const r=resDe(h);return (h.habitacion||"")||(r&&r.habitacion)||"";}
+function habRes(r){if(r.habitacion)return r.habitacion;const h=huespedes.find(x=>x.reservaId===r.id&&x.estado!=="salido"&&x.habitacion);return h?h.habitacion:"";}
+function llegadasBoard(){
+  const hoy=todayISO(),man=addDays(hoy,1),out=[];
+  const pend=huespedes.filter(h=>h.estado==="pendiente"&&h.fechaLlegada&&h.fechaLlegada<=man&&(!h.fechaSalida||h.fechaSalida>hoy));
+  const conPend=new Set(pend.map(h=>h.reservaId).filter(Boolean));
+  reservas.filter(r=>r.estado==="reservada"&&r.llegada>=hoy&&r.llegada<=man&&!conPend.has(r.id)).forEach(r=>out.push({k:"r:"+r.id,r,h:null,nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),a:r.llegada,b:r.salida,pers:Number(r.personas)||1,hab:habRes(r),plat:r.plataforma||"Reserva"}));
+  pend.forEach(h=>{const r=resDe(h);out.push({k:"h:"+h.id,h,r:r&&r.estado==="reservada"?r:null,nombre:h.nombreCompleto||"Pasajero",a:h.fechaLlegada,b:h.fechaSalida,pers:Number(h.personas)||1,hab:habPend(h),plat:r&&r.plataforma?r.plataforma:"Pre-registro"});});
+  out.sort((x,y)=>(x.a||"").localeCompare(y.a||"")||(x.hab?1:0)-(y.hab?1:0)||x.nombre.localeCompare(y.nombre));
+  return out;
+}
+const exclDe=x=>new Set([x.h&&x.h.id,x.r&&x.r.id,x.h&&x.h.reservaId].filter(Boolean));
+async function asignarHab(x,hab){
+  try{
+    if(x.h)await db.collection("huespedes").doc(x.h.id).update({habitacion:hab,busca:buscaDe({...x.h,habitacion:hab})});
+    if(x.r)await db.collection("reservas").doc(x.r.id).update({habitacion:hab});
+    toast(hab?x.nombre+" → habitación "+hab:"Habitación quitada a "+x.nombre);
+  }catch(ex){toast("No se pudo guardar"+(ex&&ex.code?" ("+ex.code+")":""));}
+  asignando=null;renderRooms();
+}
+function renderAsignar(){
+  const box=$("asigList");if(!box)return null;
+  const hoy=todayISO(),items=llegadasBoard();
+  const sel=items.find(x=>x.k===asignando)||null;if(!sel)asignando=null;
+  box.replaceChildren();let grupo="";
+  items.forEach(x=>{
+    const g=x.a<hoy?"Por confirmar":x.a===hoy?"Llegan hoy":"Llegan mañana";
+    if(g!==grupo){grupo=g;box.appendChild(el("div","asiggrp",g));}
+    const b=el("button","asigchip"+(x.hab?"":" falta")+(x===sel?" sel":""));b.type="button";b.setAttribute("aria-pressed",String(x===sel));
+    b.appendChild(el("b",null,x.nombre));
+    b.appendChild(el("span",null,[x.pers+(x.pers===1?" persona":" personas"),x.b?"hasta el "+fmt(x.b):"",x.plat].filter(Boolean).join(" · ")));
+    b.appendChild(el("span","asighab",x.hab?"Habitación "+x.hab:"Sin habitación"));
+    b.onclick=()=>{asignando=x===sel?null:x.k;renderRooms();};
+    box.appendChild(b);
+  });
+  if(!items.length)box.appendChild(el("div","muted","No hay llegadas para hoy ni mañana."));
+  $("asigHint").textContent=sel?"Ahora toca una habitación libre para "+sel.nombre+" (del "+fmt(sel.a)+" al "+fmt(sel.b)+").":items.length?"Toca un pasajero y después una habitación libre. Así, cuando llegue, ya sabe cuál es la suya.":"";
+  $("asigQuitar").hidden=!(sel&&sel.hab);$("asigCancel").hidden=!sel;
+  return sel;
+}
+$("asigQuitar").onclick=()=>{const x=llegadasBoard().find(i=>i.k===asignando);if(x)asignarHab(x,"");};
+$("asigCancel").onclick=()=>{asignando=null;renderRooms();};
 function renderRooms(){
   const hoy=todayISO();const list=rooms();
+  const sel=renderAsignar();
   const extra=new Set();huespedes.filter(h=>h.estado!=="salido"&&h.habitacion&&!list.some(r=>r.nombre===h.habitacion)).forEach(h=>extra.add(h.habitacion));
   reservas.filter(r=>r.estado==="reservada"&&r.habitacion&&!list.some(x=>x.nombre===r.habitacion)).forEach(r=>extra.add(r.habitacion));
   const all=list.concat([...extra].map(n=>({nombre:n,camas:null})));
   const box=$("rooms");box.replaceChildren();
   if(!all.length){box.appendChild(el("div","empty","Define tus habitaciones en Configuración (por ejemplo «1:2, 2:2, Dorm A:6»)."));}
+  const ligadasHab=new Set(huespedes.filter(h=>h.reservaId&&h.estado!=="salido"&&h.habitacion).map(h=>h.reservaId));
   for(const r of all){
     const o=occupantsOn(r.nombre,hoy);
     const card=el("div","room");
@@ -2272,13 +2349,25 @@ function renderRooms(){
     card.classList.add(over?"sobre":o.h>0?(sale?"sale":"ocupada"):"libre");
     const h4=el("h4",null,r.nombre);h4.appendChild(el("small",null,r.camas?o.h+"/"+r.camas+" camas":o.h+" pers."));card.appendChild(h4);
     const ul=el("ul");
-    o.hs.forEach(h=>{const li=el("li");li.appendChild(el("span",null,h.nombreCompleto));li.appendChild(el("span",null,(h.estado==="pendiente"?"por confirmar · ":"")+(h.fechaSalida===hoy?"sale hoy":"sale "+fmt(h.fechaSalida))));ul.appendChild(li);});
-    const next=reservas.filter(x=>x.estado==="reservada"&&x.habitacion===r.nombre&&x.llegada>=hoy).sort((a,b)=>a.llegada.localeCompare(b.llegada))[0];
-    if(next){const li=el("li");li.appendChild(el("span",null,"⤷ "+(next.nombreCompleto||next.plataforma)));li.appendChild(el("span",null,(next.llegada===hoy?"llega hoy":"llega "+fmt(next.llegada))+" · "+(next.plataforma||"")));ul.appendChild(li);}
+    o.hs.forEach(h=>{const li=el("li");li.appendChild(el("span",null,h.nombreCompleto));li.appendChild(el("span",null,(h.estado==="pendiente"?(h.fechaLlegada===hoy?"llega hoy · ":"por confirmar · "):"")+(h.fechaSalida===hoy?"sale hoy":"sale "+fmt(h.fechaSalida))));ul.appendChild(li);});
+    /* próxima llegada: reserva (si su pre-registro no tiene ya la habitación) o pre-registro que llega otro día */
+    const prox=reservas.filter(x=>x.estado==="reservada"&&x.habitacion===r.nombre&&x.llegada>=hoy&&!ligadasHab.has(x.id)).map(x=>({n:x.nombreCompleto||x.plataforma,a:x.llegada,p:x.plataforma||""}))
+      .concat(huespedes.filter(h=>h.estado==="pendiente"&&h.habitacion===r.nombre&&h.fechaLlegada>hoy).map(h=>({n:h.nombreCompleto,a:h.fechaLlegada,p:"pre-registro"})));
+    const next=prox.sort((a,b)=>a.a.localeCompare(b.a))[0];
+    if(next){const li=el("li");li.appendChild(el("span",null,"⤷ "+next.n));li.appendChild(el("span",null,(next.a===hoy?"llega hoy":"llega "+fmt(next.a))+" · "+next.p));ul.appendChild(li);}
     if(!o.hs.length&&!next){ul.appendChild(el("li","muted","Libre"));}
-    card.appendChild(ul);box.appendChild(card);
+    card.appendChild(ul);
+    if(sel){
+      const st=roomStatus(r,sel.a,sel.b,sel.pers,exclDe(sel)),es=sel.hab===r.nombre;
+      card.classList.add(st.ok?"elegible":"noeleg");
+      card.appendChild(el("div","roomhint",es?"✓ Asignada a "+sel.nombre:st.ok?"Toca para asignar":"No disponible"+(st.detalle?": "+st.detalle:"")));
+      card.tabIndex=0;card.setAttribute("role","button");
+      const go=()=>{if(es){asignando=null;renderRooms();return;}if(!st.ok){toast("La habitación "+r.nombre+" no está libre del "+fmt(sel.a)+" al "+fmt(sel.b)+(st.detalle?" ("+st.detalle+")":""));return;}asignarHab(sel,r.nombre);};
+      card.onclick=go;card.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    }
+    box.appendChild(card);
   }
-  const sin=huespedes.filter(h=>h.estado!=="salido"&&!h.habitacion);
+  const sin=huespedes.filter(h=>h.estado!=="salido"&&!habPend(h));
   if(sin.length){const card=el("div","room");card.appendChild(el("h4",null,"Sin habitación asignada"));const ul=el("ul");sin.forEach(h=>{const li=el("li");li.appendChild(el("span",null,h.nombreCompleto));li.appendChild(el("span",null,pill(h.estado).textContent));ul.appendChild(li);});card.appendChild(ul);box.appendChild(card);}
   const tbl=$("occ");tbl.replaceChildren();
   const days=[];for(let i=0;i<14;i++)days.push(addDays(hoy,i));
@@ -2304,10 +2393,11 @@ function renderRooms(){
 const L4=(lg,es,en,pt,fr)=>lg==="en"?en:lg==="pt"?pt:lg==="fr"?fr:es;
 function mapsUrl(){return config.direccion?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(config.direccion+", San Pedro de Atacama, Chile"):"";}
 function nombreReal(r){const n=(r.nombre||"").trim();return /^(reserva|bloqueo|reserved|closed|not available|airbnb|booking)/i.test(n)?"":n;}
-function msgPreLlegada(r,url){const n=nombreReal(r);return "¡Hola"+(n?" "+n:"")+"! Para agilizar tu llegada a "+(config.nombre||"la hostal")+" el "+fmt(r.llegada)+", completa tu pre-registro aquí (toma 2 minutos). / Hi! To speed up your check-in on "+fmt(r.llegada)+", please fill in your pre-registration here:\n"+url;}
-function msgLlegada(nombre,lg,preUrl){
+function msgPreLlegada(r,url){const n=nombreReal(r),hab=habRes(r);return "¡Hola"+(n?" "+n:"")+"! Para agilizar tu llegada a "+(config.nombre||"la hostal")+" el "+fmt(r.llegada)+", completa tu pre-registro aquí (toma 2 minutos). / Hi! To speed up your check-in on "+fmt(r.llegada)+", please fill in your pre-registration here:\n"+url+(hab?"\n🛏 Tu habitación / Your room: "+hab:"");}
+function msgLlegada(nombre,lg,preUrl,hab){
   const c=config,h=c.nombre||"la hostal";const n=nombre?" "+nombre:"";
   let m=L4(lg,"¡Hola"+n+"! Te esperamos hoy en "+h+".","Hi"+n+"! We're expecting you today at "+h+".","Olá"+n+"! Esperamos você hoje no "+h+".","Bonjour"+n+" ! Nous vous attendons aujourd'hui à "+h+".");
+  if(hab)m+="\n🛏 "+L4(lg,"Tu habitación: ","Your room: ","Seu quarto: ","Votre chambre : ")+hab;
   if(c.direccion)m+="\n📍 "+c.direccion+"\n"+mapsUrl();
   if(c.horaCheckin)m+="\n🕑 "+L4(lg,"Check-in desde las ","Check-in from ","Check-in a partir das ","Check-in à partir de ")+c.horaCheckin;
   m+="\n"+L4(lg,"Si llegas tarde o necesitas algo, escríbenos por aquí.","If you arrive late or need anything, message us here.","Se chegar tarde ou precisar de algo, escreva para nós aqui.","Si vous arrivez tard ou avez besoin de quelque chose, écrivez-nous ici.");
@@ -2329,12 +2419,12 @@ async function renderMsgs(){
   const gen=++msgsGen,hoy=todayISO(),man=addDays(hoy,1);
   const conPre=new Set(huespedes.filter(h=>h.reservaId).map(h=>h.reservaId));
   const it=[];
-  reservas.filter(r=>r.estado==="reservada"&&r.llegada===man&&!conPre.has(r.id)).forEach(r=>it.push({tipo:"pre",col:"reservas",doc:r,etiqueta:"Llega mañana · pre-registro",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:r.habitacion,
+  reservas.filter(r=>r.estado==="reservada"&&r.llegada===man&&!conPre.has(r.id)).forEach(r=>it.push({tipo:"pre",col:"reservas",doc:r,etiqueta:"Llega mañana · pre-registro",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:habRes(r),
     msg:async()=>{const u=await preLinkUrl(r);return u?msgPreLlegada(r,u):"";}}));
-  reservas.filter(r=>r.estado==="reservada"&&r.llegada===hoy).forEach(r=>it.push({tipo:"llegada",col:"reservas",doc:r,etiqueta:"Llega hoy · bienvenida",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:r.habitacion,
-    msg:async()=>msgLlegada(nombreReal(r),"",conPre.has(r.id)?"":await preLinkUrl(r))}));
-  huespedes.filter(h=>h.estado==="pendiente"&&h.fechaLlegada===hoy&&!(h.reservaId&&reservas.some(r=>r.id===h.reservaId&&r.estado==="reservada"&&r.llegada===hoy))).forEach(h=>it.push({tipo:"llegada",col:"huespedes",doc:h,etiqueta:"Llega hoy · bienvenida",nombre:h.nombreCompleto,tel:h.telefono,hab:h.habitacion,
-    msg:async()=>msgLlegada(h.nombre,h.idioma,"")}));
+  reservas.filter(r=>r.estado==="reservada"&&r.llegada===hoy).forEach(r=>it.push({tipo:"llegada",col:"reservas",doc:r,etiqueta:"Llega hoy · bienvenida",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:habRes(r),
+    msg:async()=>msgLlegada(nombreReal(r),"",conPre.has(r.id)?"":await preLinkUrl(r),habRes(r))}));
+  huespedes.filter(h=>h.estado==="pendiente"&&h.fechaLlegada===hoy&&!(h.reservaId&&reservas.some(r=>r.id===h.reservaId&&r.estado==="reservada"&&r.llegada===hoy))).forEach(h=>it.push({tipo:"llegada",col:"huespedes",doc:h,etiqueta:"Llega hoy · bienvenida",nombre:h.nombreCompleto,tel:h.telefono,hab:habPend(h),
+    msg:async()=>msgLlegada(h.nombre,h.idioma,"",habPend(h))}));
   huespedes.filter(h=>h.estado==="alojado"&&h.fechaSalida===hoy).forEach(h=>it.push({tipo:"salida",col:"huespedes",doc:h,etiqueta:"Sale hoy · check-out"+(saldoDe(h)>0?" (debe "+money(saldoDe(h))+")":""),nombre:h.nombreCompleto,tel:h.telefono,hab:h.habitacion,
     msg:async()=>msgSalida(h)}));
   const filas=[];
