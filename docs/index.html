@@ -303,17 +303,44 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .room.elegible.ocupada,.room.elegible.sale{background:var(--surface);color:var(--fg)}
 .room.elegible.ocupada li span,.room.elegible.ocupada li span:first-child{color:var(--fg)}
 .room.elegible.ocupada h4 small{background:var(--surface2);color:var(--muted)}
-.gridwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--lift)}
-table.occ{min-width:0;font-size:.86rem}
-table.occ th,table.occ td{padding:8px 6px;text-align:center}
-table.occ th:first-child,table.occ td:first-child{text-align:left;white-space:nowrap;position:sticky;left:0;background:var(--surface);font-weight:700;padding-left:16px}
-table.occ td{font-variant-numeric:tabular-nums}
-.occ .c0{color:var(--line2)}
-.occ .c1{background:color-mix(in oklab,var(--violet) 18%,var(--surface))}
-.occ .c2{background:color-mix(in oklab,var(--violet) 38%,var(--surface))}
-.occ .c3{background:color-mix(in oklab,var(--violet) 75%,var(--surface));color:#fff}
-.occ .c4{background:var(--bad-bg);color:var(--bad);font-weight:700}
-.occ th.hoy,.occ td.hoy{box-shadow:inset 0 -3px 0 var(--accent-2)}
+/* Calendario: cinta de estadías */
+.cal{padding:0;overflow:hidden}
+.calhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:18px 20px 8px}
+.calhead h3{margin:0;font-size:1.3rem;letter-spacing:-.025em}
+.calnav{display:flex;gap:6px;flex-wrap:wrap}
+.calley{display:flex;flex-wrap:wrap;gap:6px 18px;padding:2px 20px 14px;font-size:.88rem;color:var(--muted);font-weight:500}
+.calley span{display:inline-flex;align-items:center;gap:8px}
+.calley i{width:24px;height:12px;border-radius:6px;display:inline-block}
+.calscroll{overflow-x:auto;border-top:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.calgrid{--roomw:112px;display:grid;grid-template-columns:var(--roomw) repeat(calc(var(--n,14) * 2),minmax(25px,1fr));min-width:calc(var(--roomw) + var(--n,14) * 52px);position:relative}
+.calcorner .sm{display:none}
+.calcorner{grid-column:1;grid-row:1;position:sticky;left:0;z-index:4;background:var(--surface);padding:10px 16px;font-size:.84rem;font-weight:600;color:var(--muted);display:flex;align-items:flex-end;border-bottom:1px solid var(--line);box-shadow:1px 0 0 var(--line)}
+.calday{grid-row:1;display:grid;justify-items:center;align-content:end;gap:2px;padding:10px 0 9px;border-bottom:1px solid var(--line);font-size:.78rem;color:var(--muted);font-weight:600;position:relative;z-index:1}
+.calday b{font-size:1.12rem;color:var(--fg);font-weight:750;line-height:1.35;min-width:34px;text-align:center;border-radius:999px;font-variant-numeric:tabular-nums}
+.calday.finde span{color:var(--violet)}
+.calday.hoy span{color:var(--accent)}
+.calday.hoy b{background:var(--accent);color:var(--accent-fg)}
+.calday.pasado b,.calday.pasado span{opacity:.55}
+.calcol{border-left:1px solid var(--line)}
+.calcol.finde{background:color-mix(in srgb,var(--violet-soft) 45%,transparent)}
+.calcol.hoy{background:color-mix(in srgb,var(--accent-soft) 70%,transparent);box-shadow:inset 2px 0 0 var(--accent-2)}
+.calcol.pasado{background:repeating-linear-gradient(135deg,transparent 0 7px,color-mix(in srgb,var(--line) 55%,transparent) 7px 8px)}
+.calroom{grid-column:1;position:sticky;left:0;z-index:3;background:var(--surface);padding:0 16px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.35rem;letter-spacing:-.035em;border-bottom:1px solid var(--line);box-shadow:1px 0 0 var(--line);font-variant-numeric:tabular-nums}
+.calroom small{font-size:.74rem;font-weight:600;color:var(--muted);letter-spacing:0}
+.calroom.sin{font-size:.88rem;font-weight:700;color:var(--rose);letter-spacing:0;line-height:1.2}
+.calline{grid-column:2 / -1;border-bottom:1px solid var(--line);pointer-events:none}
+.calbar{position:relative;z-index:2;align-self:center;height:38px;margin:0 3px;border-radius:11px;padding:0 11px;display:flex;align-items:center;gap:8px;font:inherit;font-size:.88rem;font-weight:650;white-space:nowrap;overflow:hidden;cursor:pointer;border:0;text-align:left;min-width:0;transition:transform .12s,box-shadow .12s}
+.calbar:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(23,32,51,.45)}
+.calbar span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.calbar small{font-size:.76rem;font-weight:500;opacity:.85;overflow:hidden;text-overflow:ellipsis;flex:none}
+.calbar.alojado,.calley i.alojado{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
+.calbar.sale,.calley i.sale{background:var(--copper-soft);color:var(--copper);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--copper) 45%,transparent)}
+.calbar.reserva,.calley i.reserva{background:var(--violet-soft);color:var(--violet);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--violet) 35%,transparent)}
+.calbar.pendiente,.calley i.pendiente{background:var(--warn-bg);color:var(--warn);border:1.5px dashed color-mix(in srgb,var(--warn) 75%,transparent)}
+.calbar.salido,.calley i.salido{background:var(--off-bg);color:var(--off)}
+.calbar.cortaIzq{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+.calbar.cortaDer{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+@media (max-width:640px){.calgrid{--roomw:72px;min-width:calc(var(--roomw) + var(--n,14) * 46px)}.calroom{padding:0 10px;font-size:1.15rem}.calroom small{display:none}.calcorner{padding:10px}.calcorner .lg{display:none}.calcorner .sm{display:inline}}
 
 /* Estadísticas */
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
@@ -659,7 +686,18 @@ table.occ td{font-variant-numeric:tabular-nums}
           <div class="acts"><button class="btn sm ghost" type="button" id="asigQuitar" hidden>Quitar habitación</button><button class="btn sm ghost" type="button" id="asigCancel" hidden>Cancelar</button></div>
         </div>
         <div class="rooms" id="rooms"></div>
-        <div class="gridwrap"><table class="occ" id="occ"></table></div>
+        <section class="card cal" id="cal" aria-labelledby="calTitle">
+          <div class="calhead">
+            <h3 id="calTitle">Calendario</h3>
+            <div class="calnav">
+              <button class="btn sm ghost" type="button" id="calPrev" aria-label="Semana anterior">‹ Anterior</button>
+              <button class="btn sm ghost" type="button" id="calHoy">Hoy</button>
+              <button class="btn sm ghost" type="button" id="calNext" aria-label="Semana siguiente">Siguiente ›</button>
+            </div>
+          </div>
+          <div class="calley" aria-hidden="true"><span><i class="alojado"></i>Alojado</span><span><i class="sale"></i>Sale hoy</span><span><i class="reserva"></i>Reserva</span><span><i class="pendiente"></i>Por confirmar</span><span><i class="salido"></i>Ya salió</span></div>
+          <div class="calscroll"><div class="calgrid" id="calGrid"></div></div>
+        </section>
       </div>
 
       <!-- CAJA -->
@@ -2422,23 +2460,82 @@ function renderRooms(){
   }
   const sin=huespedes.filter(h=>h.estado!=="salido"&&!habPend(h));
   if(sin.length){const card=el("div","room sinhab");card.appendChild(el("h4",null,"Sin habitación asignada"));const ul=el("ul");sin.forEach(h=>{const li=el("li");li.appendChild(el("span",null,h.nombreCompleto));li.appendChild(el("span",null,pill(h.estado).textContent));ul.appendChild(li);});card.appendChild(ul);box.appendChild(card);}
-  const tbl=$("occ");tbl.replaceChildren();
-  const days=[];for(let i=0;i<14;i++)days.push(addDays(hoy,i));
-  const thead=el("thead");const trh=el("tr");trh.appendChild(el("th",null,"Habitación"));
-  days.forEach(d=>{const th=el("th",d===hoy?"hoy":null);const dt=new Date(d+"T12:00:00");th.textContent=["D","L","M","M","J","V","S"][dt.getDay()]+" "+dt.getDate();trh.appendChild(th);});
-  thead.appendChild(trh);tbl.appendChild(thead);
-  const tbody=el("tbody");
-  for(const r of all){
-    const tr=el("tr");tr.appendChild(td(r.nombre+(r.camas?" ("+r.camas+")":"")));
-    days.forEach(d=>{const o=occupantsOn(r.nombre,d);const tot=o.h+o.r;const cap=r.camas||Math.max(tot,1);const ratio=tot/cap;
-      const c=el("td",(d===hoy?"hoy ":"")+(tot===0?"c0":ratio>1?"c4":ratio>=.9?"c3":ratio>=.5?"c2":"c1"));
-      c.textContent=tot===0?"·":(o.r&&!o.h?"R"+tot:String(tot));
-      c.title=d+": "+o.h+" alojados"+(o.r?", "+o.r+" reservados":"");tr.appendChild(c);});
-    tbody.appendChild(tr);
-  }
-  if(!all.length){const tr=el("tr");const c=td("Sin habitaciones definidas.");c.colSpan=15;c.className="empty";tr.appendChild(c);tbody.appendChild(tr);}
-  tbl.appendChild(tbody);
+  renderCal();
 }
+
+/* ---- Calendario: cada estadía es una barra por habitación, de la mitad del día que llega a la mitad del día que se va ---- */
+let calInicio=null; /* null = la ventana parte ayer (así se ve quién sale hoy) */
+const calBase=()=>addDays(todayISO(),-1);
+const CAL_N=14,CAL_DIAS=["dom","lun","mar","mié","jue","vie","sáb"],CAL_MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const calDt=iso=>new Date(iso+"T12:00:00");
+const calDif=(a,b)=>Math.round((calDt(b)-calDt(a))/864e5);
+function estadiasCal(desde,hasta){
+  const hoy=todayISO(),out=[];
+  /* una reserva con su registro en la base se muestra una sola vez: el registro */
+  const ligadas=new Set(huespedes.filter(h=>h.reservaId&&h.estado!=="salido").map(h=>h.reservaId));
+  huespedes.forEach(h=>{
+    if(!h.fechaLlegada||!h.fechaSalida||h.fechaSalida<=desde||h.fechaLlegada>=hasta)return;
+    const tipo=h.estado==="alojado"?(h.fechaSalida===hoy?"sale":"alojado"):h.estado==="pendiente"?"pendiente":"salido";
+    const hab=h.estado==="pendiente"?habPend(h):(h.habitacion||"");
+    if(tipo==="salido"&&!hab)return;
+    out.push({hab,a:h.fechaLlegada,b:h.fechaSalida,nombre:h.nombreCompleto||"Pasajero",tipo,pers:Number(h.personas)||1,extra:h.plataforma||(h.origen==="precheckin"?"pre-registro":"")});
+  });
+  reservas.forEach(r=>{
+    if(r.estado!=="reservada"||ligadas.has(r.id)||!r.llegada||!r.salida||r.salida<=desde||r.llegada>=hasta)return;
+    out.push({hab:r.habitacion||"",a:r.llegada,b:r.salida,nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tipo:"reserva",pers:Number(r.personas)||1,extra:r.plataforma||""});
+  });
+  return out;
+}
+const CAL_TIPO={alojado:"Alojado",sale:"Sale hoy",reserva:"Reserva",pendiente:"Por confirmar",salido:"Ya salió"};
+function renderCal(){
+  const box=$("calGrid");if(!box)return;
+  const hoy=todayISO(),ini=calInicio||calBase(),fin=addDays(ini,CAL_N);
+  const d0=calDt(ini),d1=calDt(addDays(ini,CAL_N-1));
+  $("calTitle").textContent=d0.getMonth()===d1.getMonth()?"Del "+d0.getDate()+" al "+d1.getDate()+" de "+CAL_MESES[d1.getMonth()]:"Del "+d0.getDate()+" de "+CAL_MESES[d0.getMonth()]+" al "+d1.getDate()+" de "+CAL_MESES[d1.getMonth()];
+  $("calHoy").disabled=ini===calBase();
+  const est=estadiasCal(ini,fin);
+  const lista=rooms().map(r=>({nombre:r.nombre,camas:r.camas}));
+  est.forEach(e=>{if(e.hab&&!lista.some(r=>r.nombre===e.hab))lista.push({nombre:e.hab,camas:null});});
+  const sinHab=est.filter(e=>!e.hab);
+  if(sinHab.length)lista.push({nombre:"",sin:true});
+  /* carriles: dos estadías que se cruzan en la misma pieza van en filas distintas (dormitorios) */
+  let fila=2;const filas=[];
+  for(const r of lista){
+    const mias=est.filter(e=>r.sin?!e.hab:e.hab===r.nombre).sort((x,y)=>x.a.localeCompare(y.a));
+    const finCarril=[];mias.forEach(e=>{let k=finCarril.findIndex(f=>f<=e.a);if(k<0){k=finCarril.length;finCarril.push("");}finCarril[k]=e.b;e.carril=k;});
+    const n=Math.max(1,finCarril.length);filas.push({r,mias,desde:fila,n});fila+=n;
+  }
+  box.style.gridTemplateRows="auto repeat("+(fila-2)+",50px)";
+  box.style.setProperty("--n",CAL_N);
+  const frag=document.createDocumentFragment();
+  {const cc=el("div","calcorner");cc.appendChild(el("span","lg","Habitación"));cc.appendChild(el("span","sm","Hab."));frag.appendChild(cc);}
+  for(let i=0;i<CAL_N;i++){
+    const d=addDays(ini,i),dt=calDt(d),cls=(d===hoy?" hoy":"")+(dt.getDay()===0||dt.getDay()===6?" finde":"")+(d<hoy?" pasado":"");
+    const c=el("div","calday"+cls);c.style.gridColumn=(2*i+2)+" / span 2";c.appendChild(el("span",null,CAL_DIAS[dt.getDay()]));c.appendChild(el("b",null,String(dt.getDate())));frag.appendChild(c);
+    const col=el("div","calcol"+cls);col.style.gridColumn=(2*i+2)+" / span 2";col.style.gridRow="2 / "+fila;frag.appendChild(col);
+  }
+  for(const f of filas){
+    const lab=el("div","calroom"+(f.r.sin?" sin":""),f.r.sin?"Sin habitación":f.r.nombre);
+    if(f.r.camas)lab.appendChild(el("small",null,f.r.camas+(f.r.camas===1?" cama":" camas")));
+    lab.style.gridRow=f.desde+" / span "+f.n;frag.appendChild(lab);
+    const ln=el("div","calline");ln.style.gridRow=f.desde+" / span "+f.n;frag.appendChild(ln);
+    for(const e of f.mias){
+      const ia=calDif(ini,e.a),ib=calDif(ini,e.b);
+      const c0=ia<=0?2:2*ia+3,c1=ib>=CAL_N?2*CAL_N+2:2*ib+3;if(c1<=c0)continue;
+      const b=el("button","calbar "+e.tipo+(ia<0?" cortaIzq":"")+(ib>=CAL_N?" cortaDer":""));b.type="button";
+      b.style.gridColumn=c0+" / "+c1;b.style.gridRow=String(f.desde+e.carril);
+      b.appendChild(el("span",null,e.nombre));
+      if(c1-c0>=6&&(e.pers>1||e.extra))b.appendChild(el("small",null,[e.pers>1?e.pers+" pers.":"",e.extra].filter(Boolean).join(" · ")));
+      const det=e.nombre+" · "+CAL_TIPO[e.tipo]+" · del "+fmt(e.a)+" al "+fmt(e.b)+(e.pers>1?" · "+e.pers+" personas":"")+(e.extra?" · "+e.extra:"")+(e.hab?" · hab. "+e.hab:" · sin habitación");
+      b.title=det;b.setAttribute("aria-label",det);b.onclick=()=>toast(det,4000);
+      frag.appendChild(b);
+    }
+  }
+  box.replaceChildren(frag);
+}
+$("calPrev").onclick=()=>{calInicio=addDays(calInicio||calBase(),-7);renderCal();};
+$("calNext").onclick=()=>{calInicio=addDays(calInicio||calBase(),7);renderCal();};
+$("calHoy").onclick=()=>{calInicio=null;renderCal();};
 
 /* ================= MENSAJES DEL DÍA (WhatsApp con un toque) =================
    Llega mañana → link de pre-registro · Llega hoy → bienvenida (y link si falta el pre-registro) · Sale hoy → check-out y reseña.

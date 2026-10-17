@@ -2,7 +2,7 @@
    - La página principal y config.js: primero internet (para recibir las actualizaciones), si no hay, la copia guardada.
    - El resto (SDK, lector de documentos, librerías y fuentes): la copia guardada; si falta, se descarga y se guarda.
    - Firebase (la base de datos) no pasa por aquí: tiene su propia copia local y su cola de envíos. */
-var VERSION = "hsp-20261017155131";
+var VERSION = "hsp-20261017161605";
 var BASE = ["./", "index.html", "config.js", "claude-shim.js",
   "vendor/firebase-app-compat.js", "vendor/firebase-auth-compat.js", "vendor/firebase-firestore-compat.js"];
 var EXTERNOS = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
