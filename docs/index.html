@@ -204,6 +204,14 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .habchip.sel{outline:2px solid var(--accent);outline-offset:1px}
 .note.warnn{border-color:var(--warn);background:var(--warn-bg)}
 .pill.pre{background:var(--accent-soft);color:var(--accent)}
+.netbanner{position:sticky;top:0;z-index:30;background:var(--warn-bg);color:var(--warn);border-bottom:1px solid var(--line);padding:8px 16px;font-size:.92rem;text-align:center}
+.netbanner.ok{background:var(--ok-bg);color:var(--ok)}
+.msgshoy{margin-bottom:12px}
+.msgrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.msgrow:first-child{border-top:0}
+.msgrow .who{min-width:200px}
+.msgrow.sent{opacity:.6}
+.payrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}
 .pin input{text-align:center;font-size:1.6rem;letter-spacing:.4em;font-variant-numeric:tabular-nums}
 .sub{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
 .sub button{border:0;background:transparent;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
@@ -284,6 +292,7 @@ table.occ td{font-variant-numeric:tabular-nums}
       </nav>
     </div>
   </header>
+  <div class="netbanner" id="netBanner" role="status" hidden></div>
 
   <!-- ===== CHECK-IN (pasajero) ===== -->
   <section id="panel-checkin">
@@ -475,6 +484,7 @@ table.occ td{font-variant-numeric:tabular-nums}
         <button type="button" role="tab" data-sub="hoy" aria-selected="true">Hoy</button>
         <button type="button" role="tab" data-sub="reservas" aria-selected="false">Reservas</button>
         <button type="button" role="tab" data-sub="habitaciones" aria-selected="false">Habitaciones</button>
+        <button type="button" role="tab" data-sub="caja" aria-selected="false">Caja</button>
         <button type="button" role="tab" data-sub="libro" aria-selected="false">Libro de pasajeros</button>
         <button type="button" role="tab" data-sub="stats" aria-selected="false">Estadísticas</button>
         <button type="button" role="tab" data-sub="importar" aria-selected="false">Importar</button>
@@ -491,6 +501,7 @@ table.occ td{font-variant-numeric:tabular-nums}
           <div class="stat"><b id="stCobrar">$0</b><span>Por cobrar</span></div>
         </div>
         <div class="alerts" id="alerts"></div>
+        <div class="card msgshoy" id="msgsHoy" hidden><h3 id="msgsTitle">Mensajes para hoy</h3><p class="muted" style="margin:2px 0 8px">Toca WhatsApp: se abre el chat con el mensaje listo y queda marcado como enviado.</p><div id="msgsList"></div></div>
         <div class="toolbar">
           <input type="search" id="qHoy" placeholder="Buscar por nombre, documento o habitación">
           <button class="btn sm" type="button" id="btnNuevo">+ Nuevo registro</button>
@@ -575,6 +586,28 @@ table.occ td{font-variant-numeric:tabular-nums}
         <div class="gridwrap"><table class="occ" id="occ"></table></div>
       </div>
 
+      <!-- CAJA -->
+      <div id="sub-caja" hidden>
+        <div class="toolbar">
+          <label class="muted">Día <input type="date" id="cajaFecha"></label>
+          <button class="btn sm ghost" type="button" id="cajaCsv">CSV del día</button>
+        </div>
+        <div class="stats" id="cajaTiles"></div>
+        <div class="tablewrap"><table id="tblCaja">
+          <thead><tr><th>Hora</th><th>Pasajero</th><th>Hab.</th><th>Medio</th><th>Monto</th><th>En pesos</th><th>Nota</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <div class="card" style="margin-top:12px;display:grid;gap:10px">
+          <h3>Cierre de caja</h3>
+          <div class="grid3">
+            <label class="f"><span>Efectivo contado en pesos</span><input id="cajaContCLP" type="number" min="0" inputmode="numeric"></label>
+            <label class="f"><span>Efectivo contado en dólares</span><input id="cajaContUSD" type="number" min="0" step="0.01" inputmode="decimal"></label>
+            <label class="f"><span>Nota</span><input id="cajaNota"></label>
+          </div>
+          <div class="row"><button class="btn" type="button" id="cajaCerrar">Cerrar caja del día</button><span class="muted" id="cajaEstado"></span></div>
+        </div>
+      </div>
+
       <!-- LIBRO -->
       <div id="sub-libro" hidden>
         <div class="toolbar">
@@ -631,6 +664,8 @@ table.occ td{font-variant-numeric:tabular-nums}
             <label class="f"><span>Hora de check-out</span><input id="c_horaCheckout"></label>
             <label class="f"><span>Desayuno</span><input id="c_desayuno"></label>
             <label class="f"><span>Precio por noche por persona (CLP)</span><input id="c_precioNoche" type="number" min="0"></label>
+            <label class="f"><span>Valor del dólar para cobros en USD (pesos por 1 US$)</span><input id="c_tipoCambio" type="number" min="0" placeholder="Ej: 950"></label>
+            <label class="f"><span>Enlace para pedir reseña (Google Maps, TripAdvisor)</span><input id="c_resenaUrl" placeholder="https://g.page/r/…"></label>
             <label class="f"><span>Habitaciones (nombre:capacidad, separadas por coma). Vacío = 10 habitaciones (1 a 10). Las que se llamen «Dorm…» o terminen en «c» (ej. «Mixto:8c») se venden por cama.</span><input id="c_habitaciones" placeholder="1:2, 2:2, 3:3, Dorm A:6"></label>
           </div>
           <label class="f"><span>Mensaje de bienvenida</span><textarea id="c_bienvenida"></textarea></label>
@@ -683,6 +718,26 @@ table.occ td{font-variant-numeric:tabular-nums}
       <button class="btn sm danger" type="button" id="e_eliminar" style="margin-left:auto">Eliminar registro</button>
     </div>
     <div class="note err" id="e_confirmDel" hidden style="margin-top:10px">¿Eliminar definitivamente este registro? <button class="btn sm warn" type="button" id="e_confirmDelBtn">Sí, eliminar</button></div>
+  </div>
+</div>
+
+<!-- Cobro -->
+<div id="payDrawer" class="drawer" hidden>
+  <div class="inner">
+    <h3 id="payTitle">Cobrar</h3>
+    <div class="muted" id="paySum"></div>
+    <div class="grid3" style="margin-top:8px">
+      <label class="f"><span>Medio de pago</span><select id="p_medio"><option>Efectivo (pesos)</option><option>Efectivo (dólares)</option><option>Tarjeta</option><option>Transferencia</option></select></label>
+      <label class="f"><span id="p_montoLbl">Monto en pesos (CLP)</span><input id="p_monto" type="number" min="0" step="any" inputmode="decimal"></label>
+      <label class="f" id="p_tcWrap" hidden><span>Valor del dólar (pesos)</span><input id="p_tc" type="number" min="0" inputmode="numeric"></label>
+      <label class="f"><span>Nota (opcional)</span><input id="p_nota" placeholder="Ej: seña, tour, saldo"></label>
+    </div>
+    <div class="row" style="margin-top:6px"><span class="muted" id="p_eq"></span></div>
+    <div class="acts" style="margin-top:10px">
+      <button class="btn sm" type="button" id="p_guardar">Registrar pago</button>
+      <button class="btn sm ghost" type="button" id="p_cancelar">Cerrar</button>
+    </div>
+    <div id="payHist" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -1251,7 +1306,7 @@ function copyText(text,btn,okLabel,label){navigator.clipboard.writeText(text).th
 
 /* ================= Configuración ================= */
 const PUBLIC_DEFAULTS=(()=>{try{return JSON.parse($("cfgPublic").textContent);}catch(e){return {};}})();
-const CONFIG_BASE={nombre:"Hostal",direccion:"",telefono:"",wifiRed:"",wifiClave:"",horaCheckin:"14:00",horaCheckout:"11:00",desayuno:"",bienvenida:"",normas:"",recomendaciones:"",emergencias:"",habitaciones:"",precioNoche:0,conserje:"",publicUrl:"",pin:"1234",resetSeg:60};
+const CONFIG_BASE={nombre:"Hostal",direccion:"",telefono:"",wifiRed:"",wifiClave:"",horaCheckin:"14:00",horaCheckout:"11:00",desayuno:"",bienvenida:"",normas:"",recomendaciones:"",emergencias:"",habitaciones:"",precioNoche:0,conserje:"",publicUrl:"",pin:"1234",resetSeg:60,tipoCambio:0,resenaUrl:""};
 let config={...CONFIG_BASE,...PUBLIC_DEFAULTS};
 const PUBLIC_KEYS=["nombre","direccion","telefono","wifiRed","wifiClave","horaCheckin","horaCheckout","desayuno","bienvenida","normas","recomendaciones","emergencias","habitaciones","precioNoche","conserje","publicUrl"];
 /* Habitaciones: «nombre:capacidad» separadas por coma. Vacío = las 10 habitaciones del hostal (1 a 10).
@@ -1943,7 +1998,7 @@ let currentSub="hoy";
 document.querySelectorAll(".sub [role=tab]").forEach(b=>b.onclick=()=>{
   currentSub=b.dataset.sub;
   document.querySelectorAll(".sub [role=tab]").forEach(x=>x.setAttribute("aria-selected",String(x===b)));
-  ["hoy","reservas","habitaciones","libro","stats","importar","config"].forEach(n=>$("sub-"+n).hidden=n!==currentSub);
+  ["hoy","reservas","habitaciones","caja","libro","stats","importar","config"].forEach(n=>$("sub-"+n).hidden=n!==currentSub);
   renderAll();
 });
 $("btnNuevo").onclick=()=>{resetForm();setFormMode("recepcion");lang="es";applyLang();showTab("checkin");};
@@ -1992,6 +2047,7 @@ function actions(h){
     }));
   }
   if(h.estado==="salido")w.appendChild(mk("Reabrir","ghost",()=>write(h.id,{estado:"alojado",checkoutEn:""},"Registro reabierto")));
+  if(h.estado!=="salido")w.appendChild(mk("Cobrar","soft",()=>openPay(h)));
   if(!h.firma)w.appendChild(mk("Firmar","soft",()=>openSig(h)));
   const wa=waLink(h);if(wa)w.appendChild(wa);
   w.appendChild(mk("Editar","ghost",()=>openEdit(h)));
@@ -2007,6 +2063,7 @@ function nameCell(h){
 }
 function payCell(h){const tot=totalDe(h);if(!tot)return td("—");const s=saldoDe(h);const c=el("td","num");c.appendChild(el("div",null,money(tot)));c.appendChild(el("span","pill "+(s>0?"debe":"ok"),s>0?"Debe "+money(s):"Pagado"));return c;}
 function renderHoy(){
+  renderMsgs();
   const hoy=todayISO();
   const alojados=huespedes.filter(h=>h.estado==="alojado");
   $("stAlojados").textContent=alojados.reduce((a,h)=>a+(Number(h.personas)||1),0);
@@ -2241,6 +2298,156 @@ function renderRooms(){
   tbl.appendChild(tbody);
 }
 
+/* ================= MENSAJES DEL DÍA (WhatsApp con un toque) =================
+   Llega mañana → link de pre-registro · Llega hoy → bienvenida (y link si falta el pre-registro) · Sale hoy → check-out y reseña.
+   Al tocar WhatsApp queda marcado como enviado en el registro (msgs.<tipo>). */
+const L4=(lg,es,en,pt,fr)=>lg==="en"?en:lg==="pt"?pt:lg==="fr"?fr:es;
+function mapsUrl(){return config.direccion?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(config.direccion+", San Pedro de Atacama, Chile"):"";}
+function nombreReal(r){const n=(r.nombre||"").trim();return /^(reserva|bloqueo|reserved|closed|not available|airbnb|booking)/i.test(n)?"":n;}
+function msgPreLlegada(r,url){const n=nombreReal(r);return "¡Hola"+(n?" "+n:"")+"! Para agilizar tu llegada a "+(config.nombre||"la hostal")+" el "+fmt(r.llegada)+", completa tu pre-registro aquí (toma 2 minutos). / Hi! To speed up your check-in on "+fmt(r.llegada)+", please fill in your pre-registration here:\n"+url;}
+function msgLlegada(nombre,lg,preUrl){
+  const c=config,h=c.nombre||"la hostal";const n=nombre?" "+nombre:"";
+  let m=L4(lg,"¡Hola"+n+"! Te esperamos hoy en "+h+".","Hi"+n+"! We're expecting you today at "+h+".","Olá"+n+"! Esperamos você hoje no "+h+".","Bonjour"+n+" ! Nous vous attendons aujourd'hui à "+h+".");
+  if(c.direccion)m+="\n📍 "+c.direccion+"\n"+mapsUrl();
+  if(c.horaCheckin)m+="\n🕑 "+L4(lg,"Check-in desde las ","Check-in from ","Check-in a partir das ","Check-in à partir de ")+c.horaCheckin;
+  m+="\n"+L4(lg,"Si llegas tarde o necesitas algo, escríbenos por aquí.","If you arrive late or need anything, message us here.","Se chegar tarde ou precisar de algo, escreva para nós aqui.","Si vous arrivez tard ou avez besoin de quelque chose, écrivez-nous ici.");
+  if(preUrl)m+="\n\n"+L4(lg,"Para llegar con todo listo, completa tu pre-registro (2 minutos):","To speed up your check-in, fill in your pre-registration (2 minutes):","Para agilizar, faça seu pré-registro (2 minutos):","Pour gagner du temps, remplissez votre pré-enregistrement (2 minutes) :")+"\n"+preUrl;
+  return m;
+}
+function msgSalida(h){
+  const lg=h.idioma,c=config,s=saldoDe(h),hc=c.horaCheckout||"11:00",hn=c.nombre||"";
+  let m=L4(lg,"¡Hola "+h.nombre+"! Hoy es tu día de salida: el check-out es hasta las "+hc+".","Hi "+h.nombre+"! Today is your check-out day: check-out is until "+hc+".","Olá "+h.nombre+"! Hoje é o dia da sua saída: o check-out é até as "+hc+".","Bonjour "+h.nombre+" ! C'est aujourd'hui votre départ : le check-out est jusqu'à "+hc+".");
+  if(s>0)m+="\n"+L4(lg,"Queda un saldo pendiente de ","There is a pending balance of ","Há um saldo pendente de ","Il reste un solde de ")+money(s)+".";
+  m+="\n"+L4(lg,"¡Gracias por alojarte en "+(hn||"la hostal")+"!","Thank you for staying at "+(hn||"our hostel")+"!","Obrigado por se hospedar no "+(hn||"hostel")+"!","Merci d'avoir séjourné à "+(hn||"l'auberge")+" !");
+  if(c.resenaUrl)m+="\n"+L4(lg,"Si te gustó, nos ayudas mucho con una reseña:","If you enjoyed your stay, a review would help us a lot:","Se gostou, uma avaliação nos ajuda muito:","Si vous avez aimé, un avis nous aiderait beaucoup :")+"\n"+c.resenaUrl;
+  return m;
+}
+async function marcarMsg(col,doc,tipo){const msgs={...(doc.msgs||{}),[tipo]:new Date().toISOString()};doc.msgs=msgs;try{await db.collection(col).doc(doc.id).update({msgs});}catch(e){toast("No se pudo marcar el mensaje ("+(e.code||"error")+")");}}
+let msgsGen=0;
+async function renderMsgs(){
+  const box=$("msgsHoy"),list=$("msgsList");if(!box||!db)return;
+  const gen=++msgsGen,hoy=todayISO(),man=addDays(hoy,1);
+  const conPre=new Set(huespedes.filter(h=>h.reservaId).map(h=>h.reservaId));
+  const it=[];
+  reservas.filter(r=>r.estado==="reservada"&&r.llegada===man&&!conPre.has(r.id)).forEach(r=>it.push({tipo:"pre",col:"reservas",doc:r,etiqueta:"Llega mañana · pre-registro",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:r.habitacion,
+    msg:async()=>{const u=await preLinkUrl(r);return u?msgPreLlegada(r,u):"";}}));
+  reservas.filter(r=>r.estado==="reservada"&&r.llegada===hoy).forEach(r=>it.push({tipo:"llegada",col:"reservas",doc:r,etiqueta:"Llega hoy · bienvenida",nombre:r.nombreCompleto||("Reserva "+(r.plataforma||"")),tel:r.telefono,hab:r.habitacion,
+    msg:async()=>msgLlegada(nombreReal(r),"",conPre.has(r.id)?"":await preLinkUrl(r))}));
+  huespedes.filter(h=>h.estado==="pendiente"&&h.fechaLlegada===hoy&&!(h.reservaId&&reservas.some(r=>r.id===h.reservaId&&r.estado==="reservada"&&r.llegada===hoy))).forEach(h=>it.push({tipo:"llegada",col:"huespedes",doc:h,etiqueta:"Llega hoy · bienvenida",nombre:h.nombreCompleto,tel:h.telefono,hab:h.habitacion,
+    msg:async()=>msgLlegada(h.nombre,h.idioma,"")}));
+  huespedes.filter(h=>h.estado==="alojado"&&h.fechaSalida===hoy).forEach(h=>it.push({tipo:"salida",col:"huespedes",doc:h,etiqueta:"Sale hoy · check-out"+(saldoDe(h)>0?" (debe "+money(saldoDe(h))+")":""),nombre:h.nombreCompleto,tel:h.telefono,hab:h.habitacion,
+    msg:async()=>msgSalida(h)}));
+  const filas=[];
+  for(const x of it){
+    const m=await x.msg();if(gen!==msgsGen)return;
+    const row=el("div","msgrow");const sent=x.doc.msgs&&x.doc.msgs[x.tipo];if(sent)row.classList.add("sent");
+    const who=el("div","who");who.appendChild(el("div",null,x.nombre+(x.hab?" · hab. "+x.hab:"")));who.appendChild(el("div","muted",x.etiqueta+(sent?" · ✓ enviado "+new Date(sent).toTimeString().slice(0,5):"")));row.appendChild(who);
+    const acts=el("div","acts");const tel=waNumber(x.tel);
+    if(!m){acts.appendChild(el("span","muted","Configura el enlace público"));}
+    else{
+      if(tel){const a=el("a","btn sm","WhatsApp");a.href="https://wa.me/"+tel+"?text="+encodeURIComponent(m);a.target="_blank";a.rel="noopener";a.onclick=()=>{marcarMsg(x.col,x.doc,x.tipo).then(renderMsgs);};acts.appendChild(a);}
+      else acts.appendChild(el("span","pill debe","Sin teléfono"));
+      const cp=mk("Copiar","ghost",()=>{copyText(m,cp,"Copiado","Copiar");if(!tel)marcarMsg(x.col,x.doc,x.tipo).then(renderMsgs);});acts.appendChild(cp);
+    }
+    row.appendChild(acts);filas.push(row);
+  }
+  if(gen!==msgsGen)return;
+  list.replaceChildren(...filas);
+  const pend=it.filter(x=>!(x.doc.msgs&&x.doc.msgs[x.tipo])).length;
+  $("msgsTitle").textContent="Mensajes para hoy"+(it.length?" ("+(pend?pend+" por enviar":"todos enviados")+")":"");
+  box.hidden=!it.length;
+}
+
+/* ================= COBROS =================
+   Cada pago queda en el registro del pasajero (pagos[]) y suma a «pagado» en pesos; los dólares se guardan con su valor del día. */
+let paying=null;
+const esUSD=()=>$("p_medio").value==="Efectivo (dólares)";
+function payTarget(){return paying?(huespedes.find(x=>x.id===paying.id)||paying):null;}
+function openPay(h){
+  paying=h;$("payTitle").textContent="Cobrar a "+(h.nombreCompleto||"");
+  $("p_medio").value="Efectivo (pesos)";$("p_monto").value=saldoDe(h)||"";$("p_tc").value=Number(config.tipoCambio)||"";$("p_nota").value="";
+  updPay();renderPayHist();$("payDrawer").hidden=false;setTimeout(()=>$("p_monto").focus(),50);
+}
+function updPay(){
+  const h=payTarget();if(!h)return;const usd=esUSD();$("p_tcWrap").hidden=!usd;$("p_montoLbl").textContent=usd?"Monto en dólares (US$)":"Monto en pesos (CLP)";
+  const m=Number($("p_monto").value)||0,tc=Number($("p_tc").value)||0,eq=usd?Math.round(m*tc):Math.round(m),s=saldoDe(h);
+  $("paySum").textContent="Total "+money(totalDe(h))+" · pagado "+money(Number(h.pagado)||0)+" · saldo "+money(s);
+  $("p_eq").textContent=(usd?(tc?"US$ "+m+" = "+money(eq)+". ":"Falta el valor del dólar. "):"")+(m?"Saldo después del pago: "+money(Math.max(0,s-eq))+(eq>s&&s>=0?" (vuelto o adelanto de "+money(eq-s)+")":""):"");
+}
+$("p_medio").addEventListener("change",()=>{const h=payTarget();if(!h)return;const s=saldoDe(h),tc=Number($("p_tc").value)||0;$("p_monto").value=esUSD()?(tc&&s?Math.ceil(s/tc):""):(s||"");updPay();});
+["p_monto","p_tc"].forEach(id=>$(id).addEventListener("input",updPay));
+function renderPayHist(){
+  const h=payTarget(),box=$("payHist");box.replaceChildren();if(!h)return;
+  const ps=h.pagos||[];if(!ps.length){box.appendChild(el("div","muted","Sin pagos registrados todavía."));return;}
+  box.appendChild(el("b",null,"Pagos registrados"));
+  ps.slice().reverse().forEach(p=>{const r=el("div","payrow");
+    r.appendChild(el("span",null,fmt(isoOf(new Date(p.fecha)))+" "+new Date(p.fecha).toTimeString().slice(0,5)));
+    r.appendChild(el("span",null,p.medio));r.appendChild(el("b",null,p.moneda==="USD"?"US$ "+p.monto+" ("+money(p.montoCLP)+")":money(p.montoCLP)));
+    if(p.nota)r.appendChild(el("span","muted",p.nota));
+    const q=mk("Quitar","ghost",()=>{q.replaceWith(mk("Sí, quitar este pago","warn",()=>quitarPago(p.id)));});r.appendChild(q);
+    box.appendChild(r);});
+}
+async function quitarPago(pid){
+  const h=payTarget();if(!h)return;const p=(h.pagos||[]).find(x=>x.id===pid);if(!p)return;
+  const d={pagos:(h.pagos||[]).filter(x=>x.id!==pid),pagado:Math.max(0,(Number(h.pagado)||0)-(Number(p.montoCLP)||0))};
+  if(await write(h.id,d,"Pago quitado")){Object.assign(h,d);updPay();renderPayHist();}
+}
+$("p_cancelar").onclick=()=>{$("payDrawer").hidden=true;paying=null;};
+$("p_guardar").onclick=async()=>{
+  const h=payTarget();if(!h)return;const usd=esUSD(),m=Number($("p_monto").value)||0,tc=Number($("p_tc").value)||0;
+  if(m<=0){toast("Escribe el monto");return;}
+  if(usd&&tc<=0){toast("Escribe cuántos pesos vale el dólar");return;}
+  const montoCLP=usd?Math.round(m*tc):Math.round(m);
+  const pago={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),fecha:new Date().toISOString(),medio:$("p_medio").value,moneda:usd?"USD":"CLP",monto:m,montoCLP,nota:$("p_nota").value.trim()};
+  if(usd)pago.tc=tc;
+  const por=userApi&&userApi.email;if(por)pago.por=por;
+  const d={pagos:[...(h.pagos||[]),pago],pagado:(Number(h.pagado)||0)+montoCLP};
+  const b=$("p_guardar");b.disabled=true;
+  if(await write(h.id,d,"Pago registrado: "+(usd?"US$ "+m+" ("+money(montoCLP)+")":money(montoCLP)))){$("payDrawer").hidden=true;paying=null;}
+  b.disabled=false;
+};
+
+/* ================= CAJA: pagos del día, totales por medio y cierre ================= */
+let cierres=[];
+function pagosDelDia(dia){const out=[];huespedes.forEach(h=>(h.pagos||[]).forEach(p=>{if(isoOf(new Date(p.fecha))===dia)out.push({...p,h});}));return out.sort((a,b)=>a.fecha.localeCompare(b.fecha));}
+function totalesCaja(ps){
+  const t={efectivoCLP:0,efectivoUSD:0,efectivoUSDenCLP:0,tarjeta:0,transferencia:0,total:0,n:ps.length};
+  ps.forEach(p=>{const c=Number(p.montoCLP)||0;t.total+=c;
+    if(p.medio==="Efectivo (dólares)"){t.efectivoUSD+=Number(p.monto)||0;t.efectivoUSDenCLP+=c;}
+    else if(p.medio==="Tarjeta")t.tarjeta+=c;else if(p.medio==="Transferencia")t.transferencia+=c;else t.efectivoCLP+=c;});
+  t.efectivoUSD=Math.round(t.efectivoUSD*100)/100;return t;
+}
+function renderCaja(){
+  if(!$("cajaFecha").value)$("cajaFecha").value=todayISO();
+  const dia=$("cajaFecha").value,ps=pagosDelDia(dia),t=totalesCaja(ps);
+  const tiles=$("cajaTiles");tiles.replaceChildren();
+  [[money(t.efectivoCLP),"Efectivo en pesos"],["US$ "+t.efectivoUSD,"Efectivo en dólares"+(t.efectivoUSD?" ("+money(t.efectivoUSDenCLP)+")":"")],[money(t.tarjeta),"Tarjeta"],[money(t.transferencia),"Transferencia"],[money(t.total),"Total del día ("+t.n+" pagos)"]].forEach(([v,l])=>{const s=el("div","stat");s.appendChild(el("b",null,v));s.appendChild(el("span",null,l));tiles.appendChild(s);});
+  const tb=$("tblCaja").querySelector("tbody");tb.replaceChildren();
+  if(!ps.length){const tr=el("tr");const c=td("Sin pagos este día. Se registran con «Cobrar» en Hoy.");c.colSpan=7;c.className="empty";tr.appendChild(c);tb.appendChild(tr);}
+  ps.forEach(p=>{const tr=el("tr");tr.append(td(new Date(p.fecha).toTimeString().slice(0,5),"num"),td(p.h.nombreCompleto||""),td(p.h.habitacion||"—"),td(p.medio),td(p.moneda==="USD"?"US$ "+p.monto:money(p.monto),"num"),td(money(p.montoCLP),"num"),td(p.nota||""));tb.appendChild(tr);});
+  const c=cierres.find(x=>x.id===dia),st=$("cajaEstado");
+  if(c){st.textContent="Caja cerrada el "+fmt(isoOf(new Date(c.cerradoEn)))+" a las "+new Date(c.cerradoEn).toTimeString().slice(0,5)+(c.por?" por "+c.por:"")+" · diferencia en pesos "+money(c.difCLP)+(c.contadoUSD!=null?" · en dólares US$ "+c.difUSD:"")+".";$("cajaCerrar").textContent="Volver a cerrar";}
+  else{st.textContent="Esperado en efectivo: "+money(t.efectivoCLP)+(t.efectivoUSD?" y US$ "+t.efectivoUSD:"")+".";$("cajaCerrar").textContent="Cerrar caja del día";}
+}
+$("cajaFecha").addEventListener("change",renderCaja);
+$("cajaCerrar").onclick=async()=>{
+  const dia=$("cajaFecha").value||todayISO(),t=totalesCaja(pagosDelDia(dia));
+  const cc=$("cajaContCLP").value.trim(),cu=$("cajaContUSD").value.trim();
+  if(cc===""){toast("Escribe el efectivo contado en pesos (0 si no hay)");return;}
+  const doc={fecha:dia,cerradoEn:new Date().toISOString(),totales:t,contadoCLP:Number(cc)||0,difCLP:(Number(cc)||0)-t.efectivoCLP,nota:$("cajaNota").value.trim()};
+  if(cu!==""){doc.contadoUSD=Number(cu)||0;doc.difUSD=Math.round(((Number(cu)||0)-t.efectivoUSD)*100)/100;}
+  const por=userApi&&userApi.email;if(por)doc.por=por;
+  try{await db.collection("cierres").doc(dia).set(doc);toast("Caja del "+fmt(dia)+" cerrada"+(doc.difCLP?" · diferencia "+money(doc.difCLP):" · cuadra"));$("cajaContCLP").value="";$("cajaContUSD").value="";$("cajaNota").value="";}
+  catch(ex){toast("No se pudo cerrar la caja ("+(ex.code||"error")+")");}
+};
+$("cajaCsv").onclick=async()=>{
+  if(!downloads){toast("La descarga no está disponible en esta vista");return;}
+  const dia=$("cajaFecha").value||todayISO(),ps=pagosDelDia(dia);
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const lines=[["fecha","hora","pasajero","habitacion","medio","moneda","monto","valor_dolar","monto_pesos","nota","registro"].join(";")].concat(ps.map(p=>[dia,new Date(p.fecha).toTimeString().slice(0,5),p.h.nombreCompleto||"",p.h.habitacion||"",p.medio,p.moneda,p.monto,p.tc||"",p.montoCLP,p.nota||"",p.por||""].map(q).join(";")));
+  try{await downloads.save({filename:"caja-"+dia+".csv",data:"﻿"+lines.join("\r\n")});toast("CSV guardado");}catch(e){toast("No se pudo descargar");}
+};
+
 /* ================= LIBRO DE PASAJEROS ================= */
 function libroRows(){
   const q=$("qTodos").value,fe=$("fEstado").value,d1=$("fDesde").value,d2=$("fHasta").value;
@@ -2356,7 +2563,7 @@ $("impGo").onclick=()=>showImport($("impText").value);
 $("impFile").addEventListener("change",async()=>{const f=$("impFile").files&&$("impFile").files[0];if(!f)return;$("impStatus").textContent="Leyendo QR…";try{const txt=await readQrFile(f);$("impText").value=txt;await showImport(txt);}catch(e){$("impStatus").textContent=e.message||"No pude leer el QR.";}finally{$("impFile").value="";}});
 
 /* ================= CONFIGURACIÓN ================= */
-const CK=["nombre","direccion","telefono","wifiRed","wifiClave","horaCheckin","horaCheckout","desayuno","precioNoche","habitaciones","bienvenida","normas","recomendaciones","emergencias","conserje"];
+const CK=["nombre","direccion","telefono","wifiRed","wifiClave","horaCheckin","horaCheckout","desayuno","precioNoche","habitaciones","bienvenida","normas","recomendaciones","emergencias","conserje","tipoCambio","resenaUrl"];
 function fillConfigForm(){CK.forEach(k=>{const e=$("c_"+k);if(e&&document.activeElement!==e)e.value=config[k]==null?"":config[k];});if(document.activeElement!==$("c_pin"))$("c_pin").value=config.pin||"";if(document.activeElement!==$("c_reset"))$("c_reset").value=config.resetSeg==null?60:config.resetSeg;}
 async function saveConfig(patch,msg){
   if(!db){toast("Sin conexión a la base de datos");return false;}
@@ -2366,7 +2573,7 @@ async function saveConfig(patch,msg){
     if(WEB){const pub={};PUBLIC_KEYS.forEach(k=>pub[k]=next[k]==null?"":next[k]);await db.doc("config/publico").set(pub);}
     config=next;toast(msg);return true;}catch(ex){toast("No se pudo guardar ("+(ex.code||"error")+")");return false;}
 }
-$("formConfig").addEventListener("submit",e=>{e.preventDefault();const p={};CK.forEach(k=>p[k]=$("c_"+k).value.trim());p.precioNoche=Number(p.precioNoche)||0;saveConfig(p,"Información guardada");});
+$("formConfig").addEventListener("submit",e=>{e.preventDefault();const p={};CK.forEach(k=>p[k]=$("c_"+k).value.trim());p.precioNoche=Number(p.precioNoche)||0;p.tipoCambio=Number(p.tipoCambio)||0;saveConfig(p,"Información guardada");});
 $("formAjustes").addEventListener("submit",e=>{e.preventDefault();const pin=$("c_pin").value.trim();if(pin.length<4){toast("El PIN debe tener al menos 4 dígitos");return;}saveConfig({pin,resetSeg:Math.max(0,Number($("c_reset").value)||0)},"Ajustes guardados");});
 function renderPublic(){const url=config.publicUrl||PUBLIC_DEFAULTS.publicUrl||"";$("pubUrl").textContent=url||"Sin enlace público configurado";if(url)drawQr($("pubQr"),url,"L");
   if(WEB){$("btnPublicar").hidden=true;$("pubLead").textContent="Este es el enlace de tu sitio. Compártelo o imprime el QR: el pasajero hace su pre-registro desde el celular y queda guardado al instante en la base. Lo que ve (WiFi, normas, horarios) se actualiza al pulsar «Guardar información». Para enviarlo a una reserva con sus fechas cargadas, usa «Link pre-registro» en Reservas.";}}
@@ -2424,8 +2631,21 @@ function renderAll(){
   if(currentSub==="habitaciones")renderRooms();
   if(currentSub==="libro")renderTodos();
   if(currentSub==="stats")renderStats();
+  if(currentSub==="caja")renderCaja();
 }
 
+/* ================= Versión web: aviso de conexión (equipos del personal) ================= */
+function setupNetBanner(){
+  const b=$("netBanner");let fueOffline=!navigator.onLine,tm=null;
+  const pint=()=>{const n=window.FB_PENDIENTES||0;clearTimeout(tm);
+    if(!navigator.onLine){fueOffline=true;b.className="netbanner";b.textContent="Sin internet: lo que registres queda guardado en este equipo y se envía solo cuando vuelva la señal."+(n?" ("+n+" por enviar)":"");b.hidden=false;return;}
+    if(n>0&&fueOffline){b.className="netbanner";b.textContent="Volvió internet: enviando "+n+" cambio"+(n>1?"s":"")+"…";b.hidden=false;return;}
+    if(fueOffline){fueOffline=false;b.className="netbanner ok";b.textContent="Conexión recuperada: todo quedó enviado ✓";b.hidden=false;tm=setTimeout(()=>{b.hidden=true;},5000);return;}
+    b.hidden=true;};
+  window.addEventListener("online",pint);window.addEventListener("offline",pint);window.addEventListener("fb-pendientes",pint);
+  window.addEventListener("fb-error-escritura",e=>toast("Un cambio no se pudo guardar en la base ("+((e.detail&&e.detail.code)||"error")+"). Revisa el último registro.",6000));
+  pint();
+}
 /* ================= Arranque ================= */
 /* Pasajero que abre un enlace con código (pre-registro enviado desde una reserva, o su propio código): formulario pre-llenado */
 async function prefillDesdeCodigo(){if(!pendingCode)return;try{const d=await decodePre(pendingCode);pendingCode=null;prefill=d;applyPrefill(d,false);showTab("checkin");toast(t("scan_ok"));}catch(e){}}
@@ -2444,10 +2664,12 @@ try{if(sessionStorage.getItem("pubDone")==="1"){sessionStorage.removeItem("pubDo
   const canWrite=userApi?await userApi.can("data.write"):null;
   isAdmin=!!(canEdit||canWrite===true);
   $("tabRecepcion").hidden=!isAdmin;
+  if(WEB&&isAdmin)setupNetBanner();
   setFormMode(isAdmin?"kiosco":"pre");
   if(WEB&&!isAdmin){$("staffLink").hidden=false;if(location.hash==="#personal")showLogin();}
   db.doc(WEB&&!isAdmin?"config/publico":"config/hostal").onSnapshot(sn=>{applyConfig(sn.exists?sn.data():{});},e=>{console.warn("config",e);});
   if(isAdmin){
+    db.collection("cierres").orderBy("fecha","desc").limit(120).onSnapshot(sn=>{cierres=sn.docs.map(x=>({id:x.id,...x.data()}));if(currentSub==="caja")renderCaja();},e=>{console.warn("cierres",e);});
     db.collection("huespedes").orderBy("creadoEn","desc").limit(1000).onSnapshot(sn=>{huespedes=sn.docs.map(x=>({id:x.id,...x.data()}));renderAll();},e=>{toast("Se perdió la conexión con los registros ("+e.code+")");});
     db.collection("reservas").orderBy("llegada","asc").limit(1000).onSnapshot(sn=>{reservas=sn.docs.map(x=>({id:x.id,...x.data()}));renderAll();},e=>{toast("Se perdió la conexión con las reservas ("+e.code+")");});
   }

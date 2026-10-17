@@ -70,5 +70,10 @@ service cloud.firestore {
     match /reservas/{id} {
       allow read, write: if personal();
     }
+
+    // Cierres de caja diarios
+    match /cierres/{id} {
+      allow read, write: if personal();
+    }
   }
 }
